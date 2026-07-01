@@ -80,22 +80,30 @@ public enum DataDirectories
     public static let cacheDirectory: URL = {
         let fm = FileManager.default
         do {
-            // Get path of the Caches directory in the AppGroup container
+            // Store cached media under Application Support (NOT Caches) so iOS
+            // never purges it under storage pressure — downloaded content is
+            // fetched once and then kept. Excluded from iCloud/iTunes backup so
+            // the (potentially large) media cache does not bloat backups.
             let cacheDirectory = containerDirectory.appendingPathComponent("Library")
-                .appendingPathComponent("Caches")
-            
+                .appendingPathComponent("Application Support")
+
             // Append Piwigo
-            let pwgDirectory = cacheDirectory.appendingPathComponent("Piwigo")
-            
+            var pwgDirectory = cacheDirectory.appendingPathComponent("Piwigo")
+
             // Create the Piwigo directory if needed
             if fm.fileExists(atPath: pwgDirectory.path) == false {
                 try fm.createDirectory(at: pwgDirectory, withIntermediateDirectories: true, attributes: nil)
             }
-            
+
+            // Keep the persistent media cache out of device backups.
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try? pwgDirectory.setResourceValues(&values)
+
             debugPrint("••> cacheDirectory: \(pwgDirectory)")
             return pwgDirectory
         } catch {
-            fatalError("Unable to create the \"Caches/Piwgo\" directory (\(error.localizedDescription)")
+            fatalError("Unable to create the \"Application Support/Piwigo\" directory (\(error.localizedDescription)")
         }
     }()
     
