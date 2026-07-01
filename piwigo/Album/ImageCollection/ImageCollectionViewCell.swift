@@ -53,6 +53,10 @@ class ImageCollectionViewCell: UICollectionViewCell {
     private let selectScale: CGFloat = 0.2
     private let playScale: CGFloat = 0.17
 
+    // Telegram round video notes (scraper names them "<id>_round.<ext>") are
+    // rendered as a circle, the way Telegram shows them.
+    private var isRoundNote = false
+
     private var _isSelection = false
     var isSelection: Bool {
         get {
@@ -110,8 +114,12 @@ class ImageCollectionViewCell: UICollectionViewCell {
         noDataLabel?.text = ""
         isAccessibilityElement = true
 
-        // Video icon
-        playIcon?.isHidden = !(imageData.isVideo)
+        // Detect Telegram round video notes by their file name.
+        isRoundNote = imageData.isVideo &&
+            imageData.fileName.lowercased().contains("_round")
+
+        // Video icon (hidden for round notes — the circle is the cue)
+        playIcon?.isHidden = !(imageData.isVideo) || isRoundNote
 
         // Title
         let title = getImageTitle(forSortOption: sortOption)
@@ -126,9 +134,12 @@ class ImageCollectionViewCell: UICollectionViewCell {
             nameLabel?.isHidden = true
         }
 
-        // Thumbnails are not squared on iPad
-        if traitCollection.userInterfaceIdiom == .pad {
+        // Thumbnails are not squared on iPad — except round notes, which must
+        // stay square so the circular mask is a perfect circle.
+        if traitCollection.userInterfaceIdiom == .pad, isRoundNote == false {
             cellImage?.contentMode = .scaleAspectFit
+        } else if isRoundNote {
+            cellImage?.contentMode = .scaleAspectFill
         }
         
         // Retrieve image from cache or download it
@@ -248,8 +259,29 @@ class ImageCollectionViewCell: UICollectionViewCell {
         applyColorPalette()
     }
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Keep the round-note mask a perfect circle across resizes/rotations.
+        guard let img = cellImage else { return }
+        if isRoundNote {
+            img.clipsToBounds = true
+            img.layer.cornerRadius = min(img.bounds.width, img.bounds.height) / 2.0
+            img.layer.borderWidth = 1.5
+            img.layer.borderColor = UIColor.white.withAlphaComponent(0.85).cgColor
+        } else if img.layer.cornerRadius != 0 {
+            img.layer.cornerRadius = 0
+            img.layer.borderWidth = 0
+        }
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
+
+        // Reset any round-note styling before the cell is reused.
+        isRoundNote = false
+        cellImage?.layer.cornerRadius = 0
+        cellImage?.layer.borderWidth = 0
+        cellImage?.contentMode = .scaleAspectFill
 
         // Pause the ongoing image download if needed
 //        if let imageURL = self.imageURL {
