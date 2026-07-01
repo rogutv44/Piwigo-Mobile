@@ -70,7 +70,8 @@ class LocalImagesViewController: UIViewController
     var selectedSections = [SelectButtonState]()    // State of Select buttons
     var imagesBeingTouched = [IndexPath]()          // Array of indexPaths of touched images
     var uploadRequests = [UploadProperties]()       // Array of images to upload
-    
+    var roundIdentifiers = Set<String>()            // localIdentifiers of videos to upload as round notes
+
     lazy var imageCellSize: CGSize = getImageCellSize()
     let defaultImageHeaderHeight: CGFloat = 42.0
     lazy var imageHeaderHeight: CGFloat = defaultImageHeaderHeight

@@ -99,6 +99,9 @@ extension LocalImagesViewController: UICollectionViewDelegate
                     if canDelete {
                         children.append(self.deleteMenu(forCell: cell, at: indexPath))
                     }
+                    if imageAsset.mediaType == .video {
+                        children.append(self.roundAction(forCell: cell))
+                    }
                     return UIMenu(title: "", children: children)
                 })
         }
@@ -153,12 +156,31 @@ extension LocalImagesViewController: UICollectionViewDelegate
                     if canDelete {
                         children.append(self.deleteMenu(forCell: cell, at: indexPath))
                     }
+                    if imageAsset.mediaType == .video {
+                        children.append(self.roundAction(forCell: cell))
+                    }
                     return UIMenu(title: "", children: children)
                 })
         }
         return nil
     }
     
+    // Toggle whether this video is uploaded as a Telegram-style round note.
+    private func roundAction(forCell cell: LocalImageCollectionViewCell) -> UIAction {
+        let isRound = roundIdentifiers.contains(cell.localIdentifier)
+        let action = UIAction(title: isRound ? NSLocalizedString("Unmark as round video", comment: "Unmark as round video")
+                                             : NSLocalizedString("Mark as round video", comment: "Mark as round video"),
+                              image: UIImage(systemName: "circle.circle")) { [self] _ in
+            if roundIdentifiers.contains(cell.localIdentifier) {
+                roundIdentifiers.remove(cell.localIdentifier)
+            } else {
+                roundIdentifiers.insert(cell.localIdentifier)
+            }
+        }
+        action.state = isRound ? .on : .off
+        return action
+    }
+
     private func statusAction(_ upload: Upload?) -> UIAction {
         // Check if an upload request exists (should never happen)
         guard let upload = upload else {

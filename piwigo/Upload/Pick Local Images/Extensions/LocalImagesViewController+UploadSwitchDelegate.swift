@@ -56,6 +56,17 @@ extension LocalImagesViewController: UploadSwitchDelegate
                     updatedRequest.fileNameExtensionCase = caseOfFileExtension.rawValue
                 }
 
+                // Telegram-style round note: append a "_round" suffix so the
+                // gallery renders this video as a circle (see roundIdentifiers).
+                if roundIdentifiers.contains(updatedRequest.localIdentifier) {
+                    var suffix = updatedRequest.fileNameSuffixEncodedActions.actions
+                    let roundAction = RenameAction(type: .addText, style: "_round")
+                    if suffix.contains(roundAction) == false {
+                        suffix.append(roundAction)
+                    }
+                    updatedRequest.fileNameSuffixEncodedActions = suffix.encodedString
+                }
+
                 // Upload settings
                 if let stripGPSdataOnUpload = uploadParameters["stripGPSdataOnUpload"] as? Bool {
                     updatedRequest.stripGPSdataOnUpload = stripGPSdataOnUpload
