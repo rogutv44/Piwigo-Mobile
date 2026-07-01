@@ -98,7 +98,7 @@ public enum DataDirectories
             // Keep the persistent media cache out of device backups.
             var values = URLResourceValues()
             values.isExcludedFromBackup = true
-            try? pwgDirectory.setResourceValues(&values)
+            try? pwgDirectory.setResourceValues(values)
 
             debugPrint("••> cacheDirectory: \(pwgDirectory)")
             return pwgDirectory
