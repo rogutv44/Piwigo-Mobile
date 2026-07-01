@@ -1,0 +1,83 @@
+name: Build unsigned IPA
+
+# Builds an UNSIGNED .ipa on a macOS runner — no Apple Developer account or
+# secrets required. Sign the resulting artifact yourself with Sideloadly /
+# AltStore / TrollStore after downloading it.
+
+on:
+  push:
+    branches: [ master, main, telegram-gallery ]
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:            # lets you build on-demand from the Actions tab
+
+jobs:
+  build:
+    runs-on: macos-14           # Apple Silicon runner, ships recent Xcode
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show build environment
+        run: |
+          xcodebuild -version
+          xcodebuild -list -project piwigo.xcodeproj || true
+
+      - name: Resolve Swift Package dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project piwigo.xcodeproj -scheme piwigo || true
+
+      - name: Build (code signing disabled)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project piwigo.xcodeproj \
+            -scheme piwigo \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            DEVELOPMENT_TEAM="" \
+            clean build | xcpretty || \
+          xcodebuild \
+            -project piwigo.xcodeproj \
+            -scheme piwigo \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            clean build
+
+      - name: Package .app into unsigned .ipa
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          echo "Found app: $APP"
+          if [ -z "$APP" ]; then echo "No .app produced"; exit 1; fi
+          rm -rf Payload && mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry piwigo-unsigned.ipa Payload
+          ls -lh piwigo-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: piwigo-unsigned-ipa
+          path: piwigo-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
