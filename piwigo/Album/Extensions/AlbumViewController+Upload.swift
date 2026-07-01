@@ -160,8 +160,8 @@ extension AlbumViewController
     @objc func didTapUploadImagesButton() {
         // Hide CreateAlbum and UploadImages buttons
         hideOptionalButtons { [self] in
-            // Check autorisation to access Photo Library before uploading
-            checkPhotoLibraryAccess()
+            // Let the user choose the source: Photo Library or Files (documents)
+            presentUploadSourceChoice()
 
             // Reset appearance and action of Add button
             showAddButton { [self] in

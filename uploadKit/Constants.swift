@@ -24,6 +24,7 @@ public let kIntentPrefix = "Intent-"
 public let kClipboardPrefix = "Clipboard-"
 public let kImageSuffix = "-img-"
 public let kMovieSuffix = "-mov-"
+public let kDataSuffix = "-dat-"     // arbitrary document/file (PDF, etc.)
 
 // Constants returning the list of:
 /// - image formats which can be converted with iOS

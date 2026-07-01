@@ -227,12 +227,33 @@ extension UploadManager
             // Video file format cannot be accepted by the Piwigo server
             throw .unacceptedVideoFormat
         }
+        else if fileName.contains(kDataSuffix) {
+            // Arbitrary document (PDF, etc.) picked from the Files app — uploaded
+            // as-is with no conversion (the Piwigo server accepts all file types).
+            if uploadData.fileName.isEmpty {
+                uploadData.fileName = fileExt.isEmpty ? uploadData.localIdentifier
+                                                      : "\(uploadData.localIdentifier).\(fileExt)"
+            }
+            uploadData.fileType = pwgImageFileType.pdf.rawValue
+            uploadData.creationDate = (fileURL.creationDate ?? DateUtilities.unknownDate)
+                .timeIntervalSinceReferenceDate
+
+            // Finalise: copy the raw file to the location the uploader reads from.
+            let destURL = getUploadFileURL(from: uploadData.localIdentifier,
+                                           creationDate: uploadData.creationDate, deleted: true)
+            do {
+                try FileManager.default.copyItem(at: fileURL, to: destURL)
+            } catch {
+                throw PwgKitError.missingAsset
+            }
+            return
+        }
         else {
             // Unknown type
             throw .unacceptedDataFormat
         }
     }
-    
+
     /// NB: Not possible to extract AVAsset with async/await methods as of iOS 26.2
     /// so we use old method with completion handler and return false in that case.
     fileprivate func prepareAssetInPhotoLibrary(for uploadData: inout UploadProperties,
