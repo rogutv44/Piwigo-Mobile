@@ -13,7 +13,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14           # Apple Silicon runner, ships recent Xcode
+    runs-on: macos-15           # Sequoia — ships Xcode 26 (Swift 6.2) the app needs
     timeout-minutes: 45
 
     steps:
